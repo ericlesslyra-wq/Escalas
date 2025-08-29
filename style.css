@@ -3,7 +3,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    height: 90vh;
+    height: 100vh;
     width: 100vw;
     
     background: url(fundo2.jpg) no-repeat  center center fixed;
@@ -25,5 +25,6 @@ th { background-color: #f2f2f2; }
 select { width: 100%; border: none; background: transparent; }
 
 .hidden { display: none; }
+
 
 
