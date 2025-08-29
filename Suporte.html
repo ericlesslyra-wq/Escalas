@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala Suporte</title>
+<style>
+body { 
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 90vh;
+    width: 100vw;
+    background: url(fundo2.jpg) no-repeat center center fixed;
+    background-size: cover;
+}
+table { width: 80%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 2px solid black; text-align: center; padding: 5px; background-color: white; }
+th { background-color: #f2f2f2; }
+.trabalhando { background-color: #ffa500!important; color:#ffa500; }
+.plantao  { background-color: #00ff00 !important; }
+select { width: 100%; border: none; background: transparent; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<h2>Escala Sobreaviso Plantão</h2>
+
+<!--Botao Voltar para Menu-->
+<a href="Index.html"><p><b>Menu</b></p></a>
+
+<!-- Aqui fica o calendario-->
+<label for="month">Selecione o Mês: </label>
+<input type="month" id="month" onchange="generateSchedule()">
+
+<!--Essa div é a parte da senha e botao Entrar -->
+<div id="passwordPrompt">
+    <label for="password">Digite a senha: </label>
+    <input type="password" id="password">
+    <button onclick="checkPassword()">Entrar</button>
+</div>
+
+<!--Aqui fica Onde estrutura a planilha e os colaboradores-->
+<table id="schedule" class="hidden">
+    <thead>    
+        <tr>
+            <th>Data</th>
+            <th>Dia</th>
+            <!--Lista colaboradores-->
+            <th>Cibele(11)98447-2274/0800 888 5972</th>
+            <th>Matheus Bah(11)98447-2274/0800 888 5972</th>
+            <th>Victor(11)98447-2274/0800 888 5972</th>
+            <th>Raphael(11)98447-2274/0800 888 5972</th>
+            <th>Matheuzão(11)98447-2274/0800 888 5972</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- Firebase + Firestore -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+  // Configuração do Firebase (mesma do seu primeiro código)
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6hsuG9GVYnbjXgm5dKY7Oio7hs_tPVqw",
+    authDomain: "escala-6399b.firebaseapp.com",
+    projectId: "escala-6399b",
+    storageBucket: "escala-6399b.firebasestorage.app",
+    messagingSenderId: "176655623745",
+    appId: "1:176655623745:web:76ed7df3f347538d9608c0",
+    measurementId: "G-W47E6TWSKV"
+  };
+
+  // Inicializar Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // ---------------------------
+  // CONFIGURAÇÕES DE USO
+  // ---------------------------
+  const analysts = ["Trabalhando", "Plantão"];
+  const adminPassword = "admin321";
+  const userPassword = "lyra1";
+  let userRole = '';
+
+  // ---------------------------
+  // FUNÇÃO PARA VERIFICAR SENHA
+  // ---------------------------
+  async function checkPassword() {
+    const inputPassword = document.getElementById("password").value;
+    if (inputPassword === adminPassword) {
+        userRole = 'admin';
+    } else if (inputPassword === userPassword) {
+        userRole = 'user';
+    } else {
+        alert("Senha incorreta!");
+        return;
+    }
+    document.getElementById("passwordPrompt").classList.add("hidden");
+    document.getElementById("schedule").classList.remove("hidden");
+    generateSchedule();
+  }
+
+  // ---------------------------
+  // GERAR ESCALA
+  // ---------------------------
+  async function generateSchedule() {
+    const monthInput = document.getElementById("month").value;
+    if (!monthInput) return;
+
+    const [year, month] = monthInput.split("-").map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const tbody = document.querySelector("#schedule tbody");
+    tbody.innerHTML = "";
+
+    // 🔥 Buscar escala salva no Firestore
+    const docRef = doc(db, "escalasSuporte", `${year}-${month}`);
+    const docSnap = await getDoc(docRef);
+    let savedSchedule = docSnap.exists() ? docSnap.data() : {};
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+        
+        const row = document.createElement("tr");
+        row.innerHTML = `
+        <td>${day}/${month}/${year}</td>
+        <td>${dayOfWeek}</td>
+        ${Array.from({ length: 5 }, (_, i) => 
+            generateSelectCell(savedSchedule[`${day}-${i}`] || "Trabalhando", day, i, year, month)
+        ).join('')}
+        `;
+        tbody.appendChild(row);
+    }
+  }
+
+  // ---------------------------
+  // CRIAR CELULAS
+  // ---------------------------
+  function generateSelectCell(selectedValue, day, index, year, month) {
+    const className = selectedValue === "Trabalhando" ? "trabalhando" :
+                      selectedValue === "Plantão" ? "plantao" : "";
+
+    return `
+      <td class="${className}">
+        <select onchange="updateCellColor(this, ${day}, ${index}, ${year}, ${month})" ${userRole === 'admin' ? '' : 'disabled'}>
+          ${analysts.map(analyst => 
+            `<option value="${analyst}" ${analyst === selectedValue ? 'selected' : ''}>${analyst}</option>`
+          ).join('')}
+        </select>
+      </td>
+    `;
+  }
+
+  // ---------------------------
+  // SALVAR NO FIRESTORE
+  // ---------------------------
+  async function updateCellColor(selectElement, day, index, year, month) {
+    if (userRole !== 'admin') return;
+    const td = selectElement.parentElement;
+    const value = selectElement.value;
+
+    td.className = value === "Trabalhando" ? "trabalhando" :
+                   value === "Plantão" ? "plantao" : "";
+
+    // 🔥 Salvar no Firestore
+    const docRef = doc(db, "escalasSuporte", `${year}-${month}`);
+    const docSnap = await getDoc(docRef);
+    let savedSchedule = docSnap.exists() ? docSnap.data() : {};
+    savedSchedule[`${day}-${index}`] = value;
+    await setDoc(docRef, { ...savedSchedule });
+  }
+
+  // Expor funções para o HTML
+  window.checkPassword = checkPassword;
+  window.generateSchedule = generateSchedule;
+  window.updateCellColor = updateCellColor;
+
+  // ---------------------------
+  // CARREGAR DATA ATUAL
+  // ---------------------------
+  window.onload = () => {
+    const currentDate = new Date();
+    const defaultMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById("month").value = defaultMonth;
+  };
+</script>
+</body>
+</html>

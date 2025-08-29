@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala Sobreaviso Produção</title>
+<link rel="stylesheet" href="style.css">
+<body>
+<h2>Escala Sobreaviso Produção</h2>
+
+            <!--Botao Voltar para Menu-->
+<a href="Index.html">
+    <p><b>Menu</b></p>  
+</a>
+            <!-- Aqui fica o calendario-->
+<label for="month">Selecione o Mês: </label>
+<input type="month" id="month" onchange="generateSchedule()">
+
+        <!--Essa div e a parte da senha e botao Entrar -->
+<div id="passwordPrompt">
+    <label for="password">Digite a senha: </label>
+    <input type="password" id="password">
+    <button onclick="checkPassword()">Entrar</button>
+</div>
+
+    <!--Aqui fica Onde estrutura a planilha e os colaboradores-->
+<table id="schedule" class="hidden">
+    <thead>    
+        <tr>
+            <th>Data</th>
+            <th>Dia</th>
+            <!--Lista colaboradores-->
+            <th>Gabriel 9 8464-1622</th>
+            <th>Joel 9 4538-3485</th>
+            <th>Jahyr 9 8265-9238</th>
+            <th>André 9 4136-1842</th>
+            <th>Pedro  9 8821-8505 </th>
+            
+        </tr>
+    </thead>
+
+    <tbody></tbody>
+</table>
+
+<!--Script Externo Linkado aqui-->
+<script src="script.js"></script>
+</body>
+</html>
